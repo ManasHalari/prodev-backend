@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import mongoose from "mongoose";
 import routes from "./routes/commonRouter.js"
 import { connectDB } from "./db.js";
@@ -8,6 +9,7 @@ const app = express();
 connectDB();
 
 app.use(express.json());
+app.use(cors());
 
 app.use("/api", routes);
 

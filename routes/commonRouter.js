@@ -192,4 +192,145 @@ router.get("/row/table/:tableId", async (req, res) => {
   }
 });
 
+router.put("/row/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { cells } = req.body;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid row ID format'
+      });
+    }
+
+    const row = await Row.findByIdAndUpdate(
+      id,
+      { cells },
+      { new: true }
+    );
+
+    if (!row) {
+      return res.status(404).json({
+        message: "Row not found",
+      });
+    }
+
+    res.json(row);
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update row",
+      error: error.message,
+    });
+  }
+});
+
+// Delete a row
+router.delete("/row/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid row ID format'
+      });
+    }
+
+    const row = await Row.findByIdAndDelete(id);
+
+    if (!row) {
+      return res.status(404).json({
+        message: "Row not found",
+      });
+    }
+
+    res.json({
+      message: "Row deleted successfully",
+      row
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete row",
+      error: error.message,
+    });
+  }
+});
+
+// Delete a column
+router.delete("/column/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid column ID format'
+      });
+    }
+
+    const column = await Column.findByIdAndDelete(id);
+
+    if (!column) {
+      return res.status(404).json({
+        message: "Column not found",
+      });
+    }
+
+    await Row.updateMany(
+      { tableId: column.tableId },
+      { $unset: { [`cells.${id}`]: "" } }
+    );
+
+    res.json({
+      message: "Column deleted successfully",
+      column
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete column",
+      error: error.message,
+    });
+  }
+});
+
+// Delete a table
+router.delete("/table/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ObjectId
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid table ID format'
+      });
+    }
+
+    const table = await Table.findByIdAndDelete(id);
+
+    if (!table) {
+      return res.status(404).json({
+        message: "Table not found",
+      });
+    }
+
+    await Column.deleteMany({ tableId: id });
+    await Row.deleteMany({ tableId: id });
+
+    res.json({
+      message: "Table deleted successfully",
+      table
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete table",
+      error: error.message,
+    });
+  }
+});
+
 export default router;
